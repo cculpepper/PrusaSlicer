@@ -1787,6 +1787,8 @@ struct Plater::priv
     // extension should contain the leading dot, i.e.: ".3mf"
     wxString get_project_filename(const wxString& extension = wxEmptyString) const;
     void set_project_filename(const wxString& filename);
+    // Call after plater and Canvas#D is initialized
+    void init_slicing_progress_notification();
 
     // Caching last value of show_action_buttons parameter for show_action_buttons(), so that a callback which does not know this state will not override it.
     mutable bool    			ready_to_slice = { false };
@@ -1796,6 +1798,7 @@ struct Plater::priv
     std::string                 last_output_dir_path;
     bool                        inside_snapshot_capture() { return m_prevent_snapshots != 0; }
 	bool                        process_completed_with_error { false };
+   
 private:
     bool layers_height_allowed() const;
 
@@ -2012,11 +2015,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 #endif /* _WIN32 */
 
 	notification_manager = new NotificationManager(this->q);
-    /*this->statusbar()->set_cancel_callback([this]() {
-        this->statusbar()->set_status_text(_L("Cancelling"));
-        this->background_process.stop();
-        });
-    */
+
     if (wxGetApp().is_editor()) {
         this->q->Bind(EVT_EJECT_DRIVE_NOTIFICAION_CLICKED, [this](EjectDriveNotificationClickedEvent&) { this->q->eject_drive(); });
         this->q->Bind(EVT_EXPORT_GCODE_NOTIFICAION_CLICKED, [this](ExportGcodeNotificationClickedEvent&) { this->q->export_gcode(true); });
@@ -4122,6 +4121,17 @@ void Plater::priv::set_project_filename(const wxString& filename)
 
     if (!filename.empty())
         wxGetApp().mainframe->add_to_recent_projects(filename);
+}
+
+void Plater::priv::init_slicing_progress_notification()
+{
+    if (!notification_manager)
+        return;
+    auto cancel_callback = [this]() {
+        this->statusbar()->set_status_text(_L("Cancelling"));
+        this->background_process.stop();
+    };
+    notification_manager->init_slicing_progress_notification(cancel_callback);
 }
 
 void Plater::priv::set_current_canvas_as_dirty()
@@ -6518,6 +6528,11 @@ const NotificationManager* Plater::get_notification_manager() const
 NotificationManager* Plater::get_notification_manager()
 {
 	return p->notification_manager;
+}
+
+void Plater::init_slicing_progress_notification()
+{
+    p->init_slicing_progress_notification();
 }
 
 bool Plater::can_delete() const { return p->can_delete(); }

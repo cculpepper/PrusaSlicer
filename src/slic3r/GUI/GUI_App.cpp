@@ -1008,6 +1008,7 @@ bool GUI_App::on_init_inner()
             this->mainframe->register_win32_callbacks();
 #endif
             this->post_init();
+            plater_->init_slicing_progress_notification();
         }
     });
 

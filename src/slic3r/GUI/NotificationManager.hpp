@@ -175,9 +175,9 @@ public:
 	void upload_job_notification_show_canceled(int id, const std::string& filename, const std::string& host);
 	void upload_job_notification_show_error(int id, const std::string& filename, const std::string& host);
 	// slicing progress
-	void init_slicing_progress_notification();
+	void init_slicing_progress_notification(std::function<void()> cancel_callback);
 	// percentage negative = canceled, <0-1) = progress, 1 = completed 
-	void set_slicing_progress_percentage(const std::string& filename, float percentage);
+	void set_slicing_progress_percentage(const std::string& text, float percentage);
 	// hides slicing progress notification imidietly
 	void set_slicing_progress_hidden();
 	// Hint (did you know) notification
@@ -361,29 +361,7 @@ private:
 		wxEvtHandler*    m_evt_handler;
 	};
 
-	class SlicingCompleteLargeNotification : public PopNotification
-	{
-	public:
-		SlicingCompleteLargeNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler, bool large);
-		void			set_large(bool l);
-		bool			get_large() { return m_is_large; }
-		void			set_print_info(const std::string &info);
-		void			render(GLCanvas3D& canvas, float initial_y, bool move_from_overlay, float overlay_width) override
-		{
-			// This notification is always hidden if !large (means side bar is collapsed)
-			if (!get_large() && !is_finished()) 
-				m_state = EState::Hidden;
-			PopNotification::render(canvas, initial_y, move_from_overlay, overlay_width);
-		}
-	protected:
-		void render_text(ImGuiWrapper& imgui,
-			                     const float win_size_x, const float win_size_y,
-			                     const float win_pos_x, const float win_pos_y) 
-			                     override;
-		bool        m_is_large;
-		bool        m_has_print_info { false };
-        std::string m_print_info;
-	};
+	
 
 	class SlicingWarningNotification : public PopNotification
 	{
@@ -487,35 +465,70 @@ private:
 			SP_CANCELLED,
 			SP_COMPLETED
 		};
-		SlicingProgressNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler) 
+		SlicingProgressNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler, std::function<void()> callback)
 		: ProgressBarNotification(n, id_provider, evt_handler, 0)
+		, m_cancel_callback(callback)
 		{
 			set_state(SlicingProgressState::SP_NO_SLICING);
 			m_has_cancel_button = false;
 		}
-		void				cancel();
+		void				set_status_text(const std::string& text);
 		
 		void			    set_cancel_callback(std::function<void()> callback) { m_cancel_callback = callback; }
 
 		void				set_state(float percent);
 		void				set_state(SlicingProgressState state,float percent = 0.f);
+		void			    set_print_info(const std::string& info);
 	protected:
 		void        init() override;
+		void       count_lines() override 
+		{
+			if (m_sp_state == SlicingProgressState::SP_PROGRESS)
+				ProgressBarNotification::count_lines();
+			else
+				PopNotification::count_lines();
+		}
+		void	    render_text(ImGuiWrapper& imgui, const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y) override;
 		void		render_bar(ImGuiWrapper& imgui,
 								const float win_size_x, const float win_size_y,
 								const float win_pos_x, const float win_pos_y) override;
 		void		render_cancel_button(ImGuiWrapper& imgui,
 											const float win_size_x, const float win_size_y,
 											const float win_pos_x, const float win_pos_y) override;
-		// no close button
 		void		render_close_button(ImGuiWrapper& imgui,
 									const float win_size_x, const float win_size_y,
-									const float win_pos_x, const float win_pos_y) override {}
+									const float win_pos_x, const float win_pos_y) override;
 		void       on_cancel_button();
 		std::function<void()>	m_cancel_callback;
 		SlicingProgressState	m_sp_state { SlicingProgressState::SP_PROGRESS };
-		
+		bool				    m_has_print_info { false };
+		std::string             m_print_info;
 	};
+
+	class SlicingCompleteLargeNotification : public PopNotification
+	{
+	public:
+		SlicingCompleteLargeNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler, bool large);
+		void			set_large(bool l);
+		bool			get_large() { return m_is_large; }
+		void			set_print_info(const std::string& info);
+		void			render(GLCanvas3D& canvas, float initial_y, bool move_from_overlay, float overlay_width) override
+		{
+			// This notification is always hidden if !large (means side bar is collapsed)
+			if (!get_large() && !is_finished())
+				m_state = EState::Hidden;
+			PopNotification::render(canvas, initial_y, move_from_overlay, overlay_width);
+		}
+	protected:
+		void render_text(ImGuiWrapper& imgui,
+			const float win_size_x, const float win_size_y,
+			const float win_pos_x, const float win_pos_y)
+			override;
+		bool        m_is_large;
+		bool        m_has_print_info{ false };
+		std::string m_print_info;
+	};
+
 
 	class ExportFinishedNotification : public PopNotification
 	{
