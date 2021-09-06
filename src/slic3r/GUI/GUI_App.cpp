@@ -958,6 +958,8 @@ bool GUI_App::on_init_inner()
 //     update_mode(); // !!! do that later
     SetTopWindow(mainframe);
 
+    plater_->init_slicing_progress_notification();
+
     m_printhost_job_queue.reset(new PrintHostJobQueue(mainframe->printhost_queue_dlg()));
 
     if (is_gcode_viewer()) {
@@ -1008,7 +1010,6 @@ bool GUI_App::on_init_inner()
             this->mainframe->register_win32_callbacks();
 #endif
             this->post_init();
-            plater_->init_slicing_progress_notification();
         }
     });
 

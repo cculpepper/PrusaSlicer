@@ -163,6 +163,10 @@ public:
 	// Called when the side bar changes its visibility, as the "slicing complete" notification supplements
 	// the "slicing info" normally shown at the side bar.
 	void set_sidebar_collapsed(bool collapsed);
+	// Set technology for correct text in SlicingProgress.
+	void set_fff(bool b);
+	void set_fdm(bool b) { set_fff(b); }
+	void set_sla(bool b) { set_fff(!b); }
 	// Exporting finished, show this information with path, button to open containing folder and if ejectable - eject button
 	void push_exporting_finished_notification(const std::string& path, const std::string& dir_path, bool on_removable);
 	// notifications with progress bar
@@ -486,6 +490,10 @@ private:
 		void                set_sidebar_collapsed(bool collapsed);
 		// Calls inherited update_state and ensures Estate goes to hidden not closing.
 		bool                update_state(bool paused, const int64_t delta) override;
+		// Switch between technology to provide correct text.
+		void				set_fff(bool b) { m_is_fff = b; }
+		void				set_fdm(bool b) { m_is_fff = b; }
+		void				set_sla(bool b) { m_is_fff = !b; }
 	protected:
 		void        init() override;
 		void        count_lines() override 
@@ -512,6 +520,7 @@ private:
 		bool				    m_has_print_info { false };
 		std::string             m_print_info;
 		bool                    m_sidebar_collapsed { false };
+		bool					m_is_fff { true };
 	};
 
 	class ExportFinishedNotification : public PopNotification

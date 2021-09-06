@@ -1208,6 +1208,8 @@ void Sidebar::update_sliced_info_sizer()
             wxString t_est = std::isnan(ps.estimated_print_time) ? "N/A" : get_time_dhms(float(ps.estimated_print_time));
             p->sliced_info->SetTextAndShow(siEstimatedTime, t_est, _L("Estimated printing time") + ":");
 
+            p->plater->get_notification_manager()->set_slicing_complete_print_time(_utf8("Estimated printing time: ") + boost::nowide::narrow(t_est), p->plater->is_sidebar_collapsed());
+
             // Hide non-SLA sliced info parameters
             p->sliced_info->SetTextAndShow(siFilament_m, "N/A");
             p->sliced_info->SetTextAndShow(siFilament_mm3, "N/A");
@@ -1296,7 +1298,7 @@ void Sidebar::update_sliced_info_sizer()
                     new_label += format_wxstr("\n   - %1%", _L("normal mode"));
                     info_text += format_wxstr("\n%1%", short_time(ps.estimated_normal_print_time));
 
-                    p->plater->get_notification_manager()->set_slicing_complete_print_time("Estimated printing time: " + ps.estimated_normal_print_time, p->plater->is_sidebar_collapsed());
+                    p->plater->get_notification_manager()->set_slicing_complete_print_time(_utf8("Estimated printing time: ") + ps.estimated_normal_print_time, p->plater->is_sidebar_collapsed());
 
                 }
                 if (ps.estimated_silent_print_time != "N/A") {
@@ -3836,6 +3838,7 @@ void Plater::priv::on_slicing_began()
 {
 	clear_warnings();
     notification_manager->close_notification_of_type(NotificationType::SignDetected);
+    notification_manager->close_notification_of_type(NotificationType::ExportFinished);
 }
 void Plater::priv::add_warning(const Slic3r::PrintStateBase::Warning& warning, size_t oid)
 {
@@ -4133,6 +4136,7 @@ void Plater::priv::init_slicing_progress_notification()
         this->background_process.stop();
     };
     notification_manager->init_slicing_progress_notification(cancel_callback);
+    notification_manager->set_fff(printer_technology == ptFFF);
 }
 
 void Plater::priv::set_current_canvas_as_dirty()
@@ -6221,6 +6225,8 @@ bool Plater::set_printer_technology(PrinterTechnology printer_technology)
     p->update_main_toolbar_tooltips();
 
     p->sidebar->get_searcher().set_printer_technology(printer_technology);
+
+    p->notification_manager->set_fff(printer_technology == ptFFF);
 
     return ret;
 }

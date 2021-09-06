@@ -853,8 +853,8 @@ void NotificationManager::ProgressBarNotification::render_bar(ImGuiWrapper& imgu
 	ImVec2 lineEnd				= ImVec2(win_pos_x - m_window_width_offset, win_pos_y + win_size_y / 2 + (m_multiline ? m_line_height / 2 : 0));
 	ImVec2 lineStart			= ImVec2(win_pos_x - win_size_x + m_left_indentation, win_pos_y + win_size_y / 2 + (m_multiline ? m_line_height / 2 : 0));
 	ImVec2 midPoint				= ImVec2(lineStart.x + (lineEnd.x - lineStart.x) * m_percentage, lineStart.y);
-	ImGui::GetWindowDrawList()->AddLine(lineStart, lineEnd, IM_COL32((int)(gray_color.x * 255), (int)(gray_color.y * 255), (int)(gray_color.z * 255), (1.0f * 255.f)), m_line_height * 0.2f);
-	ImGui::GetWindowDrawList()->AddLine(lineStart, midPoint, IM_COL32((int)(orange_color.x * 255), (int)(orange_color.y * 255), (int)(orange_color.z * 255), (1.0f * 255.f)), m_line_height * 0.2f);
+	ImGui::GetWindowDrawList()->AddLine(lineStart, lineEnd, IM_COL32((int)(gray_color.x * 255), (int)(gray_color.y * 255), (int)(gray_color.z * 255), (m_current_fade_opacity * 255.f)), m_line_height * 0.2f);
+	ImGui::GetWindowDrawList()->AddLine(lineStart, midPoint, IM_COL32((int)(orange_color.x * 255), (int)(orange_color.y * 255), (int)(orange_color.z * 255), (m_current_fade_opacity * 255.f)), m_line_height * 0.2f);
 }
 //------PrintHostUploadNotification----------------
 void NotificationManager::PrintHostUploadNotification::init()
@@ -1131,7 +1131,7 @@ void NotificationManager::SlicingProgressNotification::set_status_text(const std
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_COMPLETED:
 	{
-		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0,  _u8L("Slicing finished."), _u8L("Export G-Code.") };
+		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0,  _u8L("Slicing finished."), m_is_fff ? _u8L("Export G-Code.") : _u8L("Export.") };
 		update(data);
 		m_state = EState::Shown;
 	}
@@ -1167,7 +1167,7 @@ int NotificationManager::SlicingProgressNotification::get_duration()
 	if (m_sp_state == SlicingProgressState::SP_CANCELLED)
 		return 10;
 	else if (m_sp_state == SlicingProgressState::SP_COMPLETED && !m_sidebar_collapsed)
-		return 2;
+		return 5;
 	else
 		return 0;
 }
@@ -1181,7 +1181,7 @@ bool  NotificationManager::SlicingProgressNotification::update_state(bool paused
 }
 void NotificationManager::SlicingProgressNotification::render_text(ImGuiWrapper& imgui, const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y)
 {
-	if (m_sp_state == SlicingProgressState::SP_PROGRESS) {
+	if (m_sp_state == SlicingProgressState::SP_PROGRESS || (m_sp_state == SlicingProgressState::SP_COMPLETED && !m_sidebar_collapsed)) {
 		ProgressBarNotification::render_text(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
 	}
 	else if (m_sp_state == SlicingProgressState::SP_COMPLETED) {
@@ -1210,7 +1210,7 @@ void NotificationManager::SlicingProgressNotification::render_text(ImGuiWrapper&
 }
 void NotificationManager::SlicingProgressNotification::render_bar(ImGuiWrapper& imgui,  const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y)
 {
-	if (m_sp_state != SlicingProgressState::SP_PROGRESS) {
+	if (!(m_sp_state == SlicingProgressState::SP_PROGRESS || (m_sp_state == SlicingProgressState::SP_COMPLETED && !m_sidebar_collapsed))) {
 		return;
 	}
 	std::string text;
@@ -1560,6 +1560,15 @@ void NotificationManager::set_sidebar_collapsed(bool collapsed)
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
 		if (notification->get_type() == NotificationType::SlicingProgress) {
 			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_sidebar_collapsed(collapsed);
+			break;
+		}
+	}
+}
+void NotificationManager::set_fff(bool fff)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::SlicingProgress) {
+			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_fff(fff);
 			break;
 		}
 	}
