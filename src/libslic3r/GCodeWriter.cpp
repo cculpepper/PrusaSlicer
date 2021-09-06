@@ -307,9 +307,31 @@ public:
         this->ptr_err.ptr = this->buf + 2;
     }
 
-    void emit_axis(const char axis, const double v, size_t digits) {
-        *ptr_err.ptr ++ = ' '; *ptr_err.ptr ++ = axis;
-        this->ptr_err = std::to_chars(this->ptr_err.ptr, this->buf_end, v, std::chars_format::fixed, digits);
+    void emit_axis(const char axis, double v, size_t digits) {
+        *ptr_err.ptr++ = ' '; *ptr_err.ptr++ = axis;
+        bool special_case = false;
+        if (0. <= v && v < 1.) {
+            v += 1.0;
+            special_case = true;
+        } else if (-1. < v && v < 0.) {
+            v -= 1.0;
+            special_case = true;
+        }
+
+        char *base_ptr = this->ptr_err.ptr;
+        // this->buf_end minus 1 because we need space dor adding the extra decimal point
+        this->ptr_err = std::to_chars(this->ptr_err.ptr, this->buf_end - 1, int64_t(std::round(v * std::pow(10, digits))));
+        memmove(this->ptr_err.ptr - digits + 1, this->ptr_err.ptr - digits, digits + 1);
+        *(this->ptr_err.ptr - digits) = '.';
+        for (size_t i = 0; i < digits; ++i)
+            if (*this->ptr_err.ptr == '0')
+                this->ptr_err.ptr--;
+        if (*this->ptr_err.ptr == '.')
+            this->ptr_err.ptr--;
+        this->ptr_err.ptr++;
+
+        if (special_case)
+            *(base_ptr + ((*base_ptr == '-') ? 1 : 0)) = '0';
     }
 
     void emit_xy(const Vec2d &point) {
