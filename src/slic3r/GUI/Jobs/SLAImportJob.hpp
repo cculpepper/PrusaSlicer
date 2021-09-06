@@ -16,7 +16,7 @@ protected:
     void finalize() override;
 
 public:
-    SLAImportJob(std::shared_ptr<ProgressIndicator> pri, Plater *plater);
+    SLAImportJob(/*std::shared_ptr<ProgressIndicator> pri,*/ Plater *plater);
     ~SLAImportJob();
 
     void reset();

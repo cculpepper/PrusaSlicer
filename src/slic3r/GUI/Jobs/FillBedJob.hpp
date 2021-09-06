@@ -27,8 +27,8 @@ protected:
     void process() override;
 
 public:
-    FillBedJob(std::shared_ptr<ProgressIndicator> pri, Plater *plater)
-        : PlaterJob{std::move(pri), plater}
+    FillBedJob(/*std::shared_ptr<ProgressIndicator> pri,*/ Plater *plater)
+        : PlaterJob{/*std::move(pri),*/ plater}
     {}
 
     int status_range() const override

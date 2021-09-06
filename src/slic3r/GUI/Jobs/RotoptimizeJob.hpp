@@ -52,8 +52,8 @@ protected:
 
 public:
 
-    RotoptimizeJob(std::shared_ptr<ProgressIndicator> pri, Plater *plater)
-        : PlaterJob{std::move(pri), plater}
+    RotoptimizeJob(/*std::shared_ptr<ProgressIndicator> pri,*/ Plater *plater)
+        : PlaterJob{/*std::move(pri),*/ plater}
     {}
 
     void finalize() override;

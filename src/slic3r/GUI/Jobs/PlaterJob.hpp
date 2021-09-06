@@ -15,8 +15,8 @@ protected:
 
 public:
 
-    PlaterJob(std::shared_ptr<ProgressIndicator> pri, Plater *plater):
-        Job{std::move(pri)}, m_plater{plater} {}
+    PlaterJob(/*std::shared_ptr<ProgressIndicator> pri,*/ Plater *plater):
+        Job{/*std::move(pri)*/}, m_plater{plater} {}
 };
 
 }} // namespace Slic3r::GUI

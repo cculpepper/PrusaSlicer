@@ -33,7 +33,7 @@ class Job : public wxEvtHandler
     boost::thread     m_thread;
     std::atomic<bool> m_running{false}, m_canceled{false};
     bool              m_finalized = false, m_finalizing = false;
-    std::shared_ptr<ProgressIndicator> m_progress;
+//    std::shared_ptr<ProgressIndicator> m_progress;
     std::exception_ptr                 m_worker_error = nullptr;
     
     void run(std::exception_ptr &);
@@ -65,7 +65,7 @@ protected:
     }
    
 public:
-    Job(std::shared_ptr<ProgressIndicator> pri);
+    Job(/*std::shared_ptr<ProgressIndicator> pri*/);
     
     bool is_finalized() const { return m_finalized; }
     
