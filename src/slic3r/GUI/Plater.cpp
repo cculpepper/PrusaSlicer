@@ -1296,10 +1296,7 @@ void Sidebar::update_sliced_info_sizer()
                     new_label += format_wxstr("\n   - %1%", _L("normal mode"));
                     info_text += format_wxstr("\n%1%", short_time(ps.estimated_normal_print_time));
 
-                    // uncomment next line to not disappear slicing finished notif when colapsing sidebar before time estimate
-                    //if (p->plater->is_sidebar_collapsed())
-                    p->plater->get_notification_manager()->set_slicing_complete_large(p->plater->is_sidebar_collapsed());
-                    p->plater->get_notification_manager()->set_slicing_complete_print_time("Estimated printing time: " + ps.estimated_normal_print_time);
+                    p->plater->get_notification_manager()->set_slicing_complete_print_time("Estimated printing time: " + ps.estimated_normal_print_time, p->plater->is_sidebar_collapsed());
 
                 }
                 if (ps.estimated_silent_print_time != "N/A") {
@@ -2153,6 +2150,8 @@ void Plater::priv::collapse_sidebar(bool collapse)
     new_tooltip += " [Shift+Tab]";
     int id = collapse_toolbar.get_item_id("collapse_sidebar");
     collapse_toolbar.set_tooltip(id, new_tooltip);
+
+    notification_manager->set_sidebar_collapsed(collapse);
 }
 
 
@@ -3811,7 +3810,6 @@ void Plater::priv::on_slicing_update(SlicingStatusEvent &evt)
 
 void Plater::priv::on_slicing_completed(wxCommandEvent & evt)
 {
-    notification_manager->push_slicing_complete_notification(evt.GetInt(), is_sidebar_collapsed());
     switch (this->printer_technology) {
     case ptFFF:
         this->update_fff_scene();
@@ -3834,7 +3832,6 @@ void Plater::priv::on_export_began(wxCommandEvent& evt)
 void Plater::priv::on_slicing_began()
 {
 	clear_warnings();
-	notification_manager->close_notification_of_type(NotificationType::SlicingComplete);
     notification_manager->close_notification_of_type(NotificationType::SignDetected);
 }
 void Plater::priv::add_warning(const Slic3r::PrintStateBase::Warning& warning, size_t oid)
@@ -3918,8 +3915,10 @@ void Plater::priv::on_process_completed(SlicingProcessCompletedEvent &evt)
         }
         has_error = true;
     }
-    if (evt.cancelled())
+    if (evt.cancelled()) {
         this->statusbar()->set_status_text(_L("Cancelled"));
+        this->notification_manager->set_slicing_progress_percentage(_utf8("Slicing Cancelled."), -1);
+    }
 
     this->sidebar->show_sliced_info_sizer(evt.success());
 
@@ -4128,7 +4127,6 @@ void Plater::priv::init_slicing_progress_notification()
     if (!notification_manager)
         return;
     auto cancel_callback = [this]() {
-        this->statusbar()->set_status_text(_L("Cancelling"));
         this->background_process.stop();
     };
     notification_manager->init_slicing_progress_notification(cancel_callback);
