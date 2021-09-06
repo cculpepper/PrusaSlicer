@@ -320,7 +320,9 @@ public:
 
         char *base_ptr = this->ptr_err.ptr;
         // this->buf_end minus 1 because we need space dor adding the extra decimal point
-        this->ptr_err = std::to_chars(this->ptr_err.ptr, this->buf_end - 1, int64_t(std::round(v * std::pow(10, digits))));
+        BOOST_STATIC_ASSERT(sizeof(long) * 1 == sizeof(int64_t));
+        this->ptr_err = std::to_chars(this->ptr_err.ptr, this->buf_end - 1, int(std::round(v * std::pow(10, digits))));
+        this->ptr_err = std::to_chars(this->ptr_err.ptr, this->buf_end - 1, long(std::round(v * std::pow(10, digits))));
         memmove(this->ptr_err.ptr - digits + 1, this->ptr_err.ptr - digits, digits + 1);
         *(this->ptr_err.ptr - digits) = '.';
         for (size_t i = 0; i < digits; ++i)
