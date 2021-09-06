@@ -3005,6 +3005,8 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
         // In SLA mode, we need to reload the 3D scene every time to show the support structures.
         if (printer_technology == ptSLA || (printer_technology == ptFFF && config->opt_bool("wipe_tower")))
             return_state |= UPDATE_BACKGROUND_PROCESS_REFRESH_SCENE;
+
+        notification_manager->set_slicing_progress_hidden();
     }
 
     if ((invalidated != Print::APPLY_STATUS_UNCHANGED || force_validation) && ! background_process.empty()) {
@@ -3076,16 +3078,16 @@ unsigned int Plater::priv::update_background_process(bool force_validation, bool
     else
     {
         // Background data is valid.
-        if ((return_state & UPDATE_BACKGROUND_PROCESS_RESTART) != 0 ||
-            (return_state & UPDATE_BACKGROUND_PROCESS_REFRESH_SCENE) != 0 )
+//        if ((return_state & UPDATE_BACKGROUND_PROCESS_RESTART) != 0 ||
+//            (return_state & UPDATE_BACKGROUND_PROCESS_REFRESH_SCENE) != 0 )
 //            this->statusbar()->set_status_text(_L("Ready to slice"));
 
-//        sidebar->set_btn_label(ActionButtonType::abExport, _(label_btn_export));
-//        sidebar->set_btn_label(ActionButtonType::abSendGCode, _(label_btn_send));
+        sidebar->set_btn_label(ActionButtonType::abExport, _(label_btn_export));
+        sidebar->set_btn_label(ActionButtonType::abSendGCode, _(label_btn_send));
 
-//        const wxString slice_string = background_process.running() && wxGetApp().get_mode() == comSimple ?
-//                                      _L("Slicing") + dots : _L("Slice now");
-//        sidebar->set_btn_label(ActionButtonType::abReslice, slice_string);
+        const wxString slice_string = background_process.running() && wxGetApp().get_mode() == comSimple ?
+                                      _L("Slicing") + dots : _L("Slice now");
+        sidebar->set_btn_label(ActionButtonType::abReslice, slice_string);
 
         if (background_process.finished())
             show_action_buttons(false);

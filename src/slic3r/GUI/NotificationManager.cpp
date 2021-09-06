@@ -1312,6 +1312,7 @@ void NotificationManager::push_notification(NotificationType type,
 void NotificationManager::push_validate_error_notification(const std::string& text)
 {
 	push_notification_data({ NotificationType::ValidateError, NotificationLevel::ErrorNotification, 0,  _u8L("ERROR:") + "\n" + text }, 0);
+	set_slicing_progress_hidden();
 }
 
 void NotificationManager::push_slicing_error_notification(const std::string& text)
