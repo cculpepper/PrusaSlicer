@@ -109,16 +109,18 @@ public:
 	{
 		// The notifications will be presented in the order of importance, thus these enum values
 		// are sorted by the importance.
-		// "Good to know" notification, usually but not always with a quick fade-out.
-		RegularNotification = 1,
+		// Important notification with progress bar, no fade-out, might appear again after closing. Position at the bottom.
+		ProgressBarNotificationLevel = 1,
+		// "Did you know" notification with special icon and buttons, Position close to bottom.
+		HintNotificationLevel,
+		// "Good to know" notification, usually but not always with a quick fade-out.		
+		RegularNotificationLevel,
 		// Information notification without a fade-out or with a longer fade-out.
-		ImportantNotification,
-		// Important notification with progress bar, no fade-out, might appear again after closing.
-		ProgressBarNotification,
+		ImportantNotificationLevel,
 		// Warning, no fade-out.
-		WarningNotification,
-		// Error, no fade-out.
-		ErrorNotification,
+		WarningNotificationLevel,
+		// Error, no fade-out. Top most position.
+		ErrorNotificationLevel,
 	};
 
 	NotificationManager(wxEvtHandler* evt_handler);
@@ -126,10 +128,10 @@ public:
 	
 	// Push a prefabricated notification from basic_notifications (see the table at the end of this file).
 	void push_notification(const NotificationType type, int timestamp = 0);
-	// Push a NotificationType::CustomNotification with NotificationLevel::RegularNotification and 10s fade out interval.
+	// Push a NotificationType::CustomNotification with NotificationLevel::RegularNotificationLevel and 10s fade out interval.
 	void push_notification(const std::string& text, int timestamp = 0);
-	// Push a NotificationType::CustomNotification with provided notification level and 10s for RegularNotification.
-	// ErrorNotification and ImportantNotification are never faded out.
+	// Push a NotificationType::CustomNotification with provided notification level and 10s for RegularNotificationLevel.
+	// ErrorNotificationLevel and ImportantNotificationLevel are never faded out.
     void push_notification(NotificationType type, NotificationLevel level, const std::string& text, const std::string& hypertext = "",
                            std::function<bool(wxEvtHandler*)> callback = std::function<bool(wxEvtHandler*)>(), int timestamp = 0);
 	// Creates Validate Error notification with a custom text and no fade out.
@@ -481,7 +483,7 @@ private:
 		// sets additional string of print info and puts notification into Completed state.
 		void			    set_print_info(const std::string& info);
 		// sets fading if in Completed state.
-		void                set_sidebar_collapsed(bool collapsed) { m_sidebar_collapsed = collapsed; }
+		void                set_sidebar_collapsed(bool collapsed);
 		// Calls inherited update_state and ensures Estate goes to hidden not closing.
 		bool                update_state(bool paused, const int64_t delta) override;
 	protected:

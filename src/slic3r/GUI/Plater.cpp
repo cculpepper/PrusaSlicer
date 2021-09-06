@@ -2022,12 +2022,12 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
 			    this->show_action_buttons(this->ready_to_slice);
                 notification_manager->close_notification_of_type(NotificationType::ExportFinished);
                 notification_manager->push_notification(NotificationType::CustomNotification,
-                                                        NotificationManager::NotificationLevel::RegularNotification,
+                                                        NotificationManager::NotificationLevel::RegularNotificationLevel,
                                                         format(_L("Successfully unmounted. The device %s(%s) can now be safely removed from the computer."), evt.data.first.name, evt.data.first.path)
                     );
             } else {
                 notification_manager->push_notification(NotificationType::CustomNotification,
-                                                        NotificationManager::NotificationLevel::ErrorNotification,
+                                                        NotificationManager::NotificationLevel::ErrorNotificationLevel,
                                                         format(_L("Ejecting of device %s(%s) has failed."), evt.data.first.name, evt.data.first.path)
                     );
             }
@@ -2328,7 +2328,7 @@ std::vector<size_t> Plater::priv::load_files(const std::vector<fs::path>& input_
                                 for (std::string& name : names)
                                     notif_text += "\n - " + name;
                                 notification_manager->push_notification(NotificationType::CustomNotification,
-                                    NotificationManager::NotificationLevel::RegularNotification, notif_text);
+                                    NotificationManager::NotificationLevel::RegularNotificationLevel, notif_text);
                             }
                         }
 
@@ -2883,7 +2883,7 @@ void Plater::priv::split_object()
         // If we splited object which is contain some parts/modifiers then all non-solid parts (modifiers) were deleted
         if (current_model_object->volumes.size() > 1 && current_model_object->volumes.size() != new_objects.size())
             notification_manager->push_notification(NotificationType::CustomNotification,
-                NotificationManager::NotificationLevel::RegularNotification,
+                NotificationManager::NotificationLevel::RegularNotificationLevel,
                 _u8L("All non-solid parts (modifiers) were deleted"));
 
         Plater::TakeSnapshot snapshot(q, _L("Split to Objects"));
@@ -2959,7 +2959,7 @@ void Plater::priv::process_validation_warning(const std::string& warning) const
 
         notification_manager->push_notification(
             NotificationType::ValidateWarning,
-            NotificationManager::NotificationLevel::WarningNotification,
+            NotificationManager::NotificationLevel::WarningNotificationLevel,
             _u8L("WARNING:") + "\n" + text, hypertext, action_fn
         );
     }
@@ -3595,7 +3595,7 @@ void Plater::priv::create_simplify_notification(const std::vector<size_t>& obj_i
         };
         notification_manager->push_notification(
             NotificationType::SimplifySuggestion,
-            NotificationManager::NotificationLevel::WarningNotification,
+            NotificationManager::NotificationLevel::WarningNotificationLevel,
             text.str(), hypertext, open_simplify);    
     }
 }
@@ -6242,7 +6242,7 @@ void Plater::clear_before_change_mesh(int obj_idx)
         // snapshot_time is captured by copy so the lambda knows where to undo/redo to.
         get_notification_manager()->push_notification(
                     NotificationType::CustomSupportsAndSeamRemovedAfterRepair,
-                    NotificationManager::NotificationLevel::RegularNotification,
+                    NotificationManager::NotificationLevel::RegularNotificationLevel,
                     _u8L("Custom supports, seams and multimaterial painting were "
                          "removed after repairing the mesh."));
 //                    _u8L("Undo the repair"),
@@ -6255,7 +6255,7 @@ void Plater::clear_before_change_mesh(int obj_idx)
 //                        else
 //                            notification_manager->push_notification(
 //                                NotificationType::CustomSupportsAndSeamRemovedAfterRepair,
-//                                NotificationManager::NotificationLevel::RegularNotification,
+//                                NotificationManager::NotificationLevel::RegularNotificationLevel,
 //                                _u8L("Cannot undo to before the mesh repair!"));
 //                        return true;
 //                    });

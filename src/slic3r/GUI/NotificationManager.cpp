@@ -33,32 +33,32 @@ wxDEFINE_EVENT(EVT_EXPORT_GCODE_NOTIFICAION_CLICKED, ExportGcodeNotificationClic
 wxDEFINE_EVENT(EVT_PRESET_UPDATE_AVAILABLE_CLICKED, PresetUpdateAvailableClickedEvent);
 
 const NotificationManager::NotificationData NotificationManager::basic_notifications[] = {
-	{NotificationType::Mouse3dDisconnected, NotificationLevel::RegularNotification, 10,  _u8L("3D Mouse disconnected.") },
-	{NotificationType::PresetUpdateAvailable, NotificationLevel::ImportantNotification, 20,  _u8L("Configuration update is available."),  _u8L("See more."),
+	{NotificationType::Mouse3dDisconnected, NotificationLevel::RegularNotificationLevel, 10,  _u8L("3D Mouse disconnected.") },
+	{NotificationType::PresetUpdateAvailable, NotificationLevel::ImportantNotificationLevel, 20,  _u8L("Configuration update is available."),  _u8L("See more."),
 		[](wxEvtHandler* evnthndlr) {
 			if (evnthndlr != nullptr)
 				wxPostEvent(evnthndlr, PresetUpdateAvailableClickedEvent(EVT_PRESET_UPDATE_AVAILABLE_CLICKED));
 			return true;
 		}
 	},
-	{NotificationType::NewAppAvailable, NotificationLevel::ImportantNotification, 20,  _u8L("New version is available."),  _u8L("See Releases page."), [](wxEvtHandler* evnthndlr) {
+	{NotificationType::NewAppAvailable, NotificationLevel::ImportantNotificationLevel, 20,  _u8L("New version is available."),  _u8L("See Releases page."), [](wxEvtHandler* evnthndlr) {
 		wxGetApp().open_browser_with_warning_dialog("https://github.com/prusa3d/PrusaSlicer/releases"); return true; }},
-	{NotificationType::EmptyColorChangeCode, NotificationLevel::RegularNotification, 10,
+	{NotificationType::EmptyColorChangeCode, NotificationLevel::RegularNotificationLevel, 10,
 		_u8L("You have just added a G-code for color change, but its value is empty.\n"
 			 "To export the G-code correctly, check the \"Color Change G-code\" in \"Printer Settings > Custom G-code\"") },
-	{NotificationType::EmptyAutoColorChange, NotificationLevel::RegularNotification, 10,
+	{NotificationType::EmptyAutoColorChange, NotificationLevel::RegularNotificationLevel, 10,
 		_u8L("No color change event was added to the print. The print does not look like a sign.") },
-	{NotificationType::DesktopIntegrationSuccess, NotificationLevel::RegularNotification, 10,
+	{NotificationType::DesktopIntegrationSuccess, NotificationLevel::RegularNotificationLevel, 10,
 		_u8L("Desktop integration was successful.") },
-	{NotificationType::DesktopIntegrationFail, NotificationLevel::WarningNotification, 10,
+	{NotificationType::DesktopIntegrationFail, NotificationLevel::WarningNotificationLevel, 10,
 		_u8L("Desktop integration failed.") },
-	{NotificationType::UndoDesktopIntegrationSuccess, NotificationLevel::RegularNotification, 10,
+	{NotificationType::UndoDesktopIntegrationSuccess, NotificationLevel::RegularNotificationLevel, 10,
 		_u8L("Undo desktop integration was successful.") },
-	{NotificationType::UndoDesktopIntegrationFail, NotificationLevel::WarningNotification, 10,
+	{NotificationType::UndoDesktopIntegrationFail, NotificationLevel::WarningNotificationLevel, 10,
 		_u8L("Undo desktop integration failed.") },
-	//{NotificationType::NewAppAvailable, NotificationLevel::ImportantNotification, 20,  _u8L("New vesion of PrusaSlicer is available.",  _u8L("Download page.") },
-	//{NotificationType::LoadingFailed, NotificationLevel::RegularNotification, 20,  _u8L("Loading of model has Failed") },
-	//{NotificationType::DeviceEjected, NotificationLevel::RegularNotification, 10,  _u8L("Removable device has been safely ejected")} // if we want changeble text (like here name of device), we need to do it as CustomNotification
+	//{NotificationType::NewAppAvailable, NotificationLevel::ImportantNotificationLevel, 20,  _u8L("New vesion of PrusaSlicer is available.",  _u8L("Download page.") },
+	//{NotificationType::LoadingFailed, NotificationLevel::RegularNotificationLevel, 20,  _u8L("Loading of model has Failed") },
+	//{NotificationType::DeviceEjected, NotificationLevel::RegularNotificationLevel, 10,  _u8L("Removable device has been safely ejected")} // if we want changeble text (like here name of device), we need to do it as CustomNotification
 };
 
 namespace {
@@ -255,13 +255,13 @@ bool NotificationManager::PopNotification::push_background_color()
 		push_style_color(ImGuiCol_WindowBg, backcolor, m_state == EState::FadingOut, m_current_fade_opacity);
 		return true;
 	}
-	if (m_data.level == NotificationLevel::ErrorNotification) {
+	if (m_data.level == NotificationLevel::ErrorNotificationLevel) {
 		ImVec4 backcolor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
 		backcolor.x += 0.3f;
 		push_style_color(ImGuiCol_WindowBg, backcolor, m_state == EState::FadingOut, m_current_fade_opacity);
 		return true;
 	}
-	if (m_data.level == NotificationLevel::WarningNotification) {
+	if (m_data.level == NotificationLevel::WarningNotificationLevel) {
 		ImVec4 backcolor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
 		backcolor.x += 0.3f;
 		backcolor.y += 0.15f;
@@ -276,9 +276,9 @@ void NotificationManager::PopNotification::count_spaces()
 	m_line_height = ImGui::CalcTextSize("A").y;
 
 	m_left_indentation = m_line_height;
-	if (m_data.level == NotificationLevel::ErrorNotification || m_data.level == NotificationLevel::WarningNotification) {
+	if (m_data.level == NotificationLevel::ErrorNotificationLevel || m_data.level == NotificationLevel::WarningNotificationLevel) {
 		std::string text;
-		text = (m_data.level == NotificationLevel::ErrorNotification ? ImGui::ErrorMarker : ImGui::WarningMarker);
+		text = (m_data.level == NotificationLevel::ErrorNotificationLevel ? ImGui::ErrorMarker : ImGui::WarningMarker);
 		float picture_width = ImGui::CalcTextSize(text.c_str()).x;
 		m_left_indentation = picture_width + m_line_height / 2;
 	}
@@ -505,9 +505,9 @@ void NotificationManager::PopNotification::render_close_button(ImGuiWrapper& img
 
 void NotificationManager::PopNotification::render_left_sign(ImGuiWrapper& imgui)
 {
-	if (m_data.level == NotificationLevel::ErrorNotification || m_data.level == NotificationLevel::WarningNotification) {
+	if (m_data.level == NotificationLevel::ErrorNotificationLevel || m_data.level == NotificationLevel::WarningNotificationLevel) {
 		std::string text;
-		text = (m_data.level == NotificationLevel::ErrorNotification ? ImGui::ErrorMarker : ImGui::WarningMarker);
+		text = (m_data.level == NotificationLevel::ErrorNotificationLevel ? ImGui::ErrorMarker : ImGui::WarningMarker);
 		ImGui::SetCursorPosX(m_line_height / 3);
 		ImGui::SetCursorPosY(m_window_height / 2 - m_line_height);
 		imgui.text(text.c_str());
@@ -633,9 +633,9 @@ void NotificationManager::ExportFinishedNotification::count_spaces()
 	m_line_height = ImGui::CalcTextSize("A").y;
 
 	m_left_indentation = m_line_height;
-	if (m_data.level == NotificationLevel::ErrorNotification || m_data.level == NotificationLevel::WarningNotification) {
+	if (m_data.level == NotificationLevel::ErrorNotificationLevel || m_data.level == NotificationLevel::WarningNotificationLevel) {
 		std::string text;
-		text = (m_data.level == NotificationLevel::ErrorNotification ? ImGui::ErrorMarker : ImGui::WarningMarker);
+		text = (m_data.level == NotificationLevel::ErrorNotificationLevel ? ImGui::ErrorMarker : ImGui::WarningMarker);
 		float picture_width = ImGui::CalcTextSize(text.c_str()).x;
 		m_left_indentation = picture_width + m_line_height / 2;
 	}
@@ -871,7 +871,7 @@ void NotificationManager::PrintHostUploadNotification::count_spaces()
 	m_left_indentation = m_line_height;
 	if (m_uj_state == UploadJobState::PB_ERROR) {
 		std::string text;
-		text = (m_data.level == NotificationLevel::ErrorNotification ? ImGui::ErrorMarker : ImGui::WarningMarker);
+		text = (m_data.level == NotificationLevel::ErrorNotificationLevel ? ImGui::ErrorMarker : ImGui::WarningMarker);
 		float picture_width = ImGui::CalcTextSize(text.c_str()).x;
 		m_left_indentation = picture_width + m_line_height / 2;
 	}
@@ -1117,21 +1117,21 @@ void NotificationManager::SlicingProgressNotification::set_status_text(const std
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_PROGRESS:
 	{
-		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotification, 0, text };
+		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0, text };
 		update(data);
 		m_state = EState::NotFading;
 	}
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_CANCELLED: 
 	{
-		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotification, 0, text };
+		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0, text };
 		update(data);
 		m_state = EState::Shown;
 	}
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_COMPLETED:
 	{
-		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotification, 0,  _u8L("Slicing finished."), _u8L("Export G-Code.") };
+		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0,  _u8L("Slicing finished."), _u8L("Export G-Code.") };
 		update(data);
 		m_state = EState::Shown;
 	}
@@ -1149,6 +1149,13 @@ void NotificationManager::SlicingProgressNotification::set_print_info(const std:
 		m_print_info = info;
 	}
 }
+void NotificationManager::SlicingProgressNotification::set_sidebar_collapsed(bool collapsed) 
+{
+	m_sidebar_collapsed = collapsed;
+	if (m_sp_state == SlicingProgressState::SP_COMPLETED)
+		m_state = EState::Shown;
+}
+
 void NotificationManager::SlicingProgressNotification::on_cancel_button()
 {
 	if (m_cancel_callback){
@@ -1160,7 +1167,7 @@ int NotificationManager::SlicingProgressNotification::get_duration()
 	if (m_sp_state == SlicingProgressState::SP_CANCELLED)
 		return 10;
 	else if (m_sp_state == SlicingProgressState::SP_COMPLETED && !m_sidebar_collapsed)
-		return 20;
+		return 2;
 	else
 		return 0;
 }
@@ -1184,7 +1191,7 @@ void NotificationManager::SlicingProgressNotification::render_text(ImGuiWrapper&
 		std::string fulltext = m_text1 + m_hypertext + m_text2;
 		ImVec2 text_size = ImGui::CalcTextSize(fulltext.c_str());
 		float cursor_y = win_size.y / 2 - text_size.y / 2;
-		if (m_has_print_info) {
+		if (m_sidebar_collapsed && m_has_print_info) {
 			x_offset = 20;
 			cursor_y = win_size.y / 2 + win_size.y / 6 - text_size.y / 2;
 			ImGui::SetCursorPosX(x_offset);
@@ -1195,8 +1202,8 @@ void NotificationManager::SlicingProgressNotification::render_text(ImGuiWrapper&
 		ImGui::SetCursorPosX(x_offset);
 		ImGui::SetCursorPosY(cursor_y);
 		imgui.text(m_text1.c_str());
-
-		render_hypertext(imgui, x_offset + text1_size.x + 4, cursor_y, m_hypertext);
+		if (m_sidebar_collapsed)
+			render_hypertext(imgui, x_offset + text1_size.x + 4, cursor_y, m_hypertext);
 	} else {
 		PopNotification::render_text(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
 	}
@@ -1286,7 +1293,7 @@ void NotificationManager::push_notification(const NotificationType type, int tim
 }
 void NotificationManager::push_notification(const std::string& text, int timestamp)
 {
-	push_notification_data({ NotificationType::CustomNotification, NotificationLevel::RegularNotification, 10, text }, timestamp);
+	push_notification_data({ NotificationType::CustomNotification, NotificationLevel::RegularNotificationLevel, 10, text }, timestamp);
 }
 
 void NotificationManager::push_notification(NotificationType type,
@@ -1298,11 +1305,11 @@ void NotificationManager::push_notification(NotificationType type,
 {
 	int duration = 0;
 	switch (level) {
-	case NotificationLevel::RegularNotification: 	 duration = 10; break;
-	case NotificationLevel::ErrorNotification: 		 break;
-	case NotificationLevel::WarningNotification:     break;
-	case NotificationLevel::ImportantNotification: 	 break;
-	case NotificationLevel::ProgressBarNotification: break;
+	case NotificationLevel::RegularNotificationLevel: 	 duration = 10; break;
+	case NotificationLevel::ErrorNotificationLevel: 		 break;
+	case NotificationLevel::WarningNotificationLevel:     break;
+	case NotificationLevel::ImportantNotificationLevel: 	 break;
+	case NotificationLevel::ProgressBarNotificationLevel: break;
 	default:
 		assert(false);
 		return;
@@ -1311,19 +1318,19 @@ void NotificationManager::push_notification(NotificationType type,
 }
 void NotificationManager::push_validate_error_notification(const std::string& text)
 {
-	push_notification_data({ NotificationType::ValidateError, NotificationLevel::ErrorNotification, 0,  _u8L("ERROR:") + "\n" + text }, 0);
+	push_notification_data({ NotificationType::ValidateError, NotificationLevel::ErrorNotificationLevel, 0,  _u8L("ERROR:") + "\n" + text }, 0);
 	set_slicing_progress_hidden();
 }
 
 void NotificationManager::push_slicing_error_notification(const std::string& text)
 {
 	set_all_slicing_errors_gray(false);
-	push_notification_data({ NotificationType::SlicingError, NotificationLevel::ErrorNotification, 0,  _u8L("ERROR:") + "\n" + text }, 0);
+	push_notification_data({ NotificationType::SlicingError, NotificationLevel::ErrorNotificationLevel, 0,  _u8L("ERROR:") + "\n" + text }, 0);
 	set_slicing_progress_hidden();
 }
 void NotificationManager::push_slicing_warning_notification(const std::string& text, bool gray, ObjectID oid, int warning_step)
 {
-	NotificationData data { NotificationType::SlicingWarning, NotificationLevel::WarningNotification, 0,  _u8L("WARNING:") + "\n" + text };
+	NotificationData data { NotificationType::SlicingWarning, NotificationLevel::WarningNotificationLevel, 0,  _u8L("WARNING:") + "\n" + text };
 
 	auto notification = std::make_unique<NotificationManager::SlicingWarningNotification>(data, m_id_provider, m_evt_handler);
 	notification->object_id = oid;
@@ -1334,7 +1341,7 @@ void NotificationManager::push_slicing_warning_notification(const std::string& t
 }
 void NotificationManager::push_plater_error_notification(const std::string& text)
 {
-	push_notification_data({ NotificationType::PlaterError, NotificationLevel::ErrorNotification, 0,  _u8L("ERROR:") + "\n" + text }, 0);
+	push_notification_data({ NotificationType::PlaterError, NotificationLevel::ErrorNotificationLevel, 0,  _u8L("ERROR:") + "\n" + text }, 0);
 }
 
 void NotificationManager::close_plater_error_notification(const std::string& text)
@@ -1358,7 +1365,7 @@ void NotificationManager::push_plater_warning_notification(const std::string& te
 		}
 	}
 
-	NotificationData data{ NotificationType::PlaterWarning, NotificationLevel::WarningNotification, 0,  _u8L("WARNING:") + "\n" + text };
+	NotificationData data{ NotificationType::PlaterWarning, NotificationLevel::WarningNotificationLevel, 0,  _u8L("WARNING:") + "\n" + text };
 
 	auto notification = std::make_unique<NotificationManager::PlaterWarningNotification>(data, m_id_provider, m_evt_handler);
 	push_notification_data(std::move(notification), 0);
@@ -1416,25 +1423,7 @@ void NotificationManager::close_slicing_error_notification(const std::string& te
 		}
 	}
 }
-void NotificationManager::set_slicing_complete_print_time(const std::string &info, bool sidebar_colapsed)
-{
-	for (std::unique_ptr<PopNotification> &notification : m_pop_notifications) {
-		if (notification->get_type() == NotificationType::SlicingProgress) {
-			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_sidebar_collapsed(sidebar_colapsed);
-			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_print_info(info);
-			break;
-		}
-	}
-}
-void NotificationManager::set_sidebar_collapsed(bool collapsed)
-{
-	for (std::unique_ptr<PopNotification> &notification : m_pop_notifications) {
-		if (notification->get_type() == NotificationType::SlicingProgress) {
-			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_sidebar_collapsed(collapsed);
-			break;
-		}
-	}
-}
+
 void NotificationManager::close_notification_of_type(const NotificationType type)
 {
 	for (std::unique_ptr<PopNotification> &notification : m_pop_notifications) {
@@ -1455,7 +1444,7 @@ void NotificationManager::remove_slicing_warnings_of_released_objects(const std:
 void NotificationManager::push_exporting_finished_notification(const std::string& path, const std::string& dir_path, bool on_removable)
 {
 	close_notification_of_type(NotificationType::ExportFinished);
-	NotificationData data{ NotificationType::ExportFinished, NotificationLevel::RegularNotification, on_removable ? 0 : 20,  _u8L("Exporting finished.") + "\n" + path };
+	NotificationData data{ NotificationType::ExportFinished, NotificationLevel::RegularNotificationLevel, on_removable ? 0 : 20,  _u8L("Exporting finished.") + "\n" + path };
 	push_notification_data(std::make_unique<NotificationManager::ExportFinishedNotification>(data, m_id_provider, m_evt_handler, on_removable, path, dir_path), 0);
 }
 
@@ -1469,7 +1458,7 @@ void  NotificationManager::push_upload_job_notification(int id, float filesize, 
 		}
 	}
 	std::string text = PrintHostUploadNotification::get_upload_job_text(id, filename, host);
-	NotificationData data{ NotificationType::PrintHostUpload, NotificationLevel::ProgressBarNotification, 10, text };
+	NotificationData data{ NotificationType::PrintHostUpload, NotificationLevel::ProgressBarNotificationLevel, 10, text };
 	push_notification_data(std::make_unique<NotificationManager::PrintHostUploadNotification>(data, m_id_provider, m_evt_handler, 0, id, filesize), 0);
 }
 void NotificationManager::set_upload_job_notification_percentage(int id, const std::string& filename, const std::string& host, float percentage)
@@ -1519,7 +1508,7 @@ void NotificationManager::init_slicing_progress_notification(std::function<void(
 			return;
 		}
 	}
-	NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotification, 0,  std::string(),std::string(),
+	NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0,  std::string(),std::string(),
 						  [](wxEvtHandler* evnthndlr) {
 							  if (evnthndlr != nullptr)
 								  wxPostEvent(evnthndlr, ExportGcodeNotificationClickedEvent(EVT_EXPORT_GCODE_NOTIFICAION_CLICKED));
@@ -1528,20 +1517,6 @@ void NotificationManager::init_slicing_progress_notification(std::function<void(
 	};
 	push_notification_data(std::make_unique<NotificationManager::SlicingProgressNotification>(data, m_id_provider, m_evt_handler, cancel_callback), 0);
 }
-/*
-void NotificationManager::push_slicing_progress_notification(const std::string& event_text, float percentage)
-{
-	// TODO: what to do with multiple progresses?
-	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
-		if (notification->get_type() == NotificationType::SlicingProgress) {
-			return;
-		}
-	}
-	std::string text = event_text;
-	NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotification, 1, text };
-	push_notification_data(std::make_unique<NotificationManager::SlicingProgressNotification>(data, m_id_provider, m_evt_handler, 0), 0);
-}
-*/
 void NotificationManager::set_slicing_progress_percentage(const std::string& text, float percentage)
 {
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
@@ -1570,7 +1545,25 @@ void NotificationManager::set_slicing_progress_hidden()
 	// Slicing progress notification was not found - init it thru plater so correct cancel callback function is appended
 	wxGetApp().plater()->init_slicing_progress_notification();
 }
-
+void NotificationManager::set_slicing_complete_print_time(const std::string& info, bool sidebar_colapsed)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::SlicingProgress) {
+			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_sidebar_collapsed(sidebar_colapsed);
+			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_print_info(info);
+			break;
+		}
+	}
+}
+void NotificationManager::set_sidebar_collapsed(bool collapsed)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::SlicingProgress) {
+			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_sidebar_collapsed(collapsed);
+			break;
+		}
+	}
+}
 void NotificationManager::push_hint_notification(bool open_next)
 {
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
@@ -1580,7 +1573,7 @@ void NotificationManager::push_hint_notification(bool open_next)
 		}
 	}
 	
-	NotificationData data{ NotificationType::DidYouKnowHint, NotificationLevel::RegularNotification, 300, "" };
+	NotificationData data{ NotificationType::DidYouKnowHint, NotificationLevel::HintNotificationLevel, 300, "" };
 	// from user - open now
 	if (!open_next) {
 		push_notification_data(std::make_unique<NotificationManager::HintNotification>(data, m_id_provider, m_evt_handler, open_next), 0);
@@ -1613,7 +1606,7 @@ void NotificationManager::push_updated_item_info_notification(InfoItemType type)
 		}
 	}
 
-	NotificationData data{ NotificationType::UpdatedItemsInfo, NotificationLevel::RegularNotification, 5, "" };
+	NotificationData data{ NotificationType::UpdatedItemsInfo, NotificationLevel::RegularNotificationLevel, 5, "" };
 	auto notification = std::make_unique<NotificationManager::UpdatedItemsInfoNotification>(data, m_id_provider, m_evt_handler, type);
 	if (push_notification_data(std::move(notification), 0)) {
 		(dynamic_cast<UpdatedItemsInfoNotification*>(m_pop_notifications.back().get()))->add_type(type);
