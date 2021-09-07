@@ -1088,6 +1088,7 @@ void NotificationManager::SlicingProgressNotification::set_progress_state(Notifi
 		m_state = EState::Hidden;
 		set_percentage(-1);
 		m_has_print_info = false;
+		set_export_possible(false);
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_PROGRESS:
 		set_percentage(percent);
@@ -1097,11 +1098,14 @@ void NotificationManager::SlicingProgressNotification::set_progress_state(Notifi
 		set_percentage(-1);
 		m_has_cancel_button = false;
 		m_has_print_info = false;
+		set_export_possible(false);
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_COMPLETED:
 		set_percentage(1);
 		m_has_cancel_button = false;
 		m_has_print_info = false;
+		// m_export_possible is important only for PROGRESS state, thus we can reset it here
+		set_export_possible(false);
 		break;
 	default:
 		break;
@@ -1117,7 +1121,7 @@ void NotificationManager::SlicingProgressNotification::set_status_text(const std
 		break;
 	case Slic3r::GUI::NotificationManager::SlicingProgressNotification::SlicingProgressState::SP_PROGRESS:
 	{
-		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0, text };
+		NotificationData data{ NotificationType::SlicingProgress, NotificationLevel::ProgressBarNotificationLevel, 0, text ,  m_is_fff ? _u8L("Export G-Code.") : _u8L("Export.") };
 		update(data);
 		m_state = EState::NotFading;
 	}
@@ -1182,9 +1186,40 @@ bool  NotificationManager::SlicingProgressNotification::update_state(bool paused
 void NotificationManager::SlicingProgressNotification::render_text(ImGuiWrapper& imgui, const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y)
 {
 	if (m_sp_state == SlicingProgressState::SP_PROGRESS || (m_sp_state == SlicingProgressState::SP_COMPLETED && !m_sidebar_collapsed)) {
-		ProgressBarNotification::render_text(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
+		if (m_multiline) {
+			// two lines text, one line bar
+			ImGui::SetCursorPosX(m_left_indentation);
+			ImGui::SetCursorPosY(m_line_height / 4);
+			imgui.text(m_text1.substr(0, m_endlines[0]).c_str());
+			ImGui::SetCursorPosX(m_left_indentation);
+			ImGui::SetCursorPosY(m_line_height + m_line_height / 4);
+			std::string line = m_text1.substr(m_endlines[0] + (m_text1[m_endlines[0]] == '\n' || m_text1[m_endlines[0]] == ' ' ? 1 : 0), m_endlines[1] - m_endlines[0] - (m_text1[m_endlines[0]] == '\n' || m_text1[m_endlines[0]] == ' ' ? 1 : 0));
+			imgui.text(line.c_str());
+			if (m_sidebar_collapsed && m_sp_state == SlicingProgressState::SP_PROGRESS && m_export_possible) {
+				ImVec2 text_size = ImGui::CalcTextSize(line.c_str());
+				render_hypertext(imgui, m_left_indentation + text_size.x + 4, m_line_height + m_line_height / 4, m_hypertext);
+			}
+			if (m_has_cancel_button)
+				render_cancel_button(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
+			render_bar(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
+		}
+		else {
+			//one line text, one line bar
+			ImGui::SetCursorPosX(m_left_indentation);
+			ImGui::SetCursorPosY(/*win_size_y / 2 - win_size_y / 6 -*/ m_line_height / 4);
+			std::string line = m_text1.substr(0, m_endlines[0]);
+			imgui.text(line.c_str());
+			if (m_sidebar_collapsed && m_sp_state == SlicingProgressState::SP_PROGRESS && m_export_possible) {
+				ImVec2 text_size = ImGui::CalcTextSize(line.c_str());
+				render_hypertext(imgui, m_left_indentation + text_size.x + 4, m_line_height / 4, m_hypertext);
+			}
+			if (m_has_cancel_button)
+				render_cancel_button(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
+			render_bar(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
+		}
 	}
 	else if (m_sp_state == SlicingProgressState::SP_COMPLETED) {
+		// "Slicing Finished" on line 1 + hypertext, print info on line
 		ImVec2 win_size(win_size_x, win_size_y);
 		ImVec2 text1_size = ImGui::CalcTextSize(m_text1.c_str());
 		float x_offset = m_left_indentation;
@@ -1505,6 +1540,7 @@ void NotificationManager::init_slicing_progress_notification(std::function<void(
 {
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
 		if (notification->get_type() == NotificationType::SlicingProgress) {
+			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_cancel_callback(cancel_callback);	
 			return;
 		}
 	}
@@ -1522,10 +1558,10 @@ void NotificationManager::set_slicing_progress_percentage(const std::string& tex
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
 		if (notification->get_type() == NotificationType::SlicingProgress) {
 			SlicingProgressNotification* spn = dynamic_cast<SlicingProgressNotification*>(notification.get());
-				spn->set_progress_state(percentage);
-				spn->set_status_text(text);
-				wxGetApp().plater()->get_current_canvas3D()->schedule_extra_frame(0);
-				return;
+			spn->set_progress_state(percentage);
+			spn->set_status_text(text);
+			wxGetApp().plater()->get_current_canvas3D()->schedule_extra_frame(0);
+			return;
 		}
 	}
 	// Slicing progress notification was not found - init it thru plater so correct cancel callback function is appended
@@ -1573,6 +1609,15 @@ void NotificationManager::set_fff(bool fff)
 		}
 	}
 }
+void NotificationManager::set_slicing_progress_export_possible()
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::SlicingProgress) {
+			dynamic_cast<SlicingProgressNotification*>(notification.get())->set_export_possible(true);
+			break;
+		}
+	}
+}
 void NotificationManager::push_hint_notification(bool open_next)
 {
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
@@ -1590,8 +1635,8 @@ void NotificationManager::push_hint_notification(bool open_next)
 	// at startup - delay for half a second to let other notification pop up, than try every 30 seconds
 	// show only if no notifications are shown
 	} else { 
-		auto condition = [this]() {
-			return this->get_notification_count() == 0;
+		auto condition = [&self = std::as_const(*this)]() {
+			return self.get_notification_count() == 0;
 		};
 		push_delayed_notification(std::make_unique<NotificationManager::HintNotification>(data, m_id_provider, m_evt_handler, open_next), condition, 500, 30000);
 	}

@@ -6,6 +6,7 @@
 #include "GLCanvas3D.hpp"
 #include "Event.hpp"
 #include "I18N.hpp"
+#include "Jobs/ProgressIndicator.hpp"
 
 #include <libslic3r/ObjectID.hpp>
 #include <libslic3r/Technologies.hpp>
@@ -99,7 +100,10 @@ enum class NotificationType
 	// Might contain logo taken from gizmos
 	UpdatedItemsInfo,
 	// Give user advice to simplify object with big amount of triangles
-	SimplifySuggestion
+	SimplifySuggestion,
+	// Inheriting from both ProgressBarNotification and Jobs/ProgressIndicator
+	// TO BE IMPLEMENTED
+	//ProgressIndicator,
 };
 
 class NotificationManager
@@ -158,8 +162,7 @@ public:
 	// Closes error or warning of the same text
 	void close_plater_error_notification(const std::string& text);
 	void close_plater_warning_notification(const std::string& text);
-	// Add a print time estimate to an existing SlicingProgress notification. Set said notification to SP_COMPLETED state.
-	void set_slicing_complete_print_time(const std::string &info, bool sidebar_colapsed);
+	
 	// Called when the side bar changes its visibility, as the "slicing complete" notification supplements
 	// the "slicing info" normally shown at the side bar.
 	void set_sidebar_collapsed(bool collapsed);
@@ -181,6 +184,9 @@ public:
 	void set_slicing_progress_percentage(const std::string& text, float percentage);
 	// hides slicing progress notification imidietly
 	void set_slicing_progress_hidden();
+	// Add a print time estimate to an existing SlicingProgress notification. Set said notification to SP_COMPLETED state.
+	void set_slicing_complete_print_time(const std::string& info, bool sidebar_colapsed);
+	void set_slicing_progress_export_possible();
 	// Hint (did you know) notification
 	void push_hint_notification(bool open_next);
 	bool is_hint_notification_open();
@@ -480,6 +486,7 @@ private:
 		void				set_status_text(const std::string& text);
 		// sets cancel button callback
 		void			    set_cancel_callback(std::function<void()> callback) { m_cancel_callback = callback; }
+		bool                has_cancel_callback() const { return m_cancel_callback != nullptr; }
 		// sets SlicingProgressState, negative percent means canceled
 		void				set_progress_state(float percent);
 		// sets SlicingProgressState, percent is used only at progress state.
@@ -494,6 +501,7 @@ private:
 		void				set_fff(bool b) { m_is_fff = b; }
 		void				set_fdm(bool b) { m_is_fff = b; }
 		void				set_sla(bool b) { m_is_fff = !b; }
+		void                set_export_possible(bool b) { m_export_possible = b; }
 	protected:
 		void        init() override;
 		void        count_lines() override 
@@ -521,6 +529,8 @@ private:
 		std::string             m_print_info;
 		bool                    m_sidebar_collapsed { false };
 		bool					m_is_fff { true };
+		// if true, it is possible show export hyperlink in state SP_PROGRESS
+		bool                    m_export_possible { false };
 	};
 
 	class ExportFinishedNotification : public PopNotification
