@@ -308,30 +308,35 @@ public:
     }
 
     void emit_axis(const char axis, double v, size_t digits) {
+        assert(digits <= 6);
+        static constexpr const std::array<int, 7> pow_10{1, 10, 100, 1000, 10000, 100000, 1000000};
         *ptr_err.ptr++ = ' '; *ptr_err.ptr++ = axis;
-        bool special_case = false;
-        if (0. <= v && v < 1.) {
-            v += 1.0;
-            special_case = true;
-        } else if (-1. < v && v < 0.) {
-            v -= 1.0;
-            special_case = true;
-        }
 
         char *base_ptr = this->ptr_err.ptr;
-        // this->buf_end minus 1 because we need space dor adding the extra decimal point
-        this->ptr_err = std::to_chars(this->ptr_err.ptr, this->buf_end - 1, int64_t(std::round(v * std::pow(10, digits))));
-        memmove(this->ptr_err.ptr - digits + 1, this->ptr_err.ptr - digits, digits + 1);
+        // this->buf_end minus 1 because we need space for adding the extra decimal point
+        auto v_int           = int64_t(std::round(v * pow_10[digits]));
+        this->ptr_err        = std::to_chars(this->ptr_err.ptr, this->buf_end - 1, v_int);
+        size_t writen_digits = (this->ptr_err.ptr - base_ptr) - (v_int < 0 ? 1 : 0);
+
+        if (writen_digits < digits) {
+            size_t remaining_digits = digits - writen_digits;
+            std::copy_backward(this->ptr_err.ptr - writen_digits, this->ptr_err.ptr, this->ptr_err.ptr + remaining_digits);
+            memset(this->ptr_err.ptr - writen_digits, '0', remaining_digits);
+            this->ptr_err.ptr += remaining_digits;
+        }
+
+        std::copy_backward(this->ptr_err.ptr - digits, this->ptr_err.ptr, this->ptr_err.ptr + 1);
         *(this->ptr_err.ptr - digits) = '.';
-        for (size_t i = 0; i < digits; ++i)
-            if (*this->ptr_err.ptr == '0')
-                this->ptr_err.ptr--;
+        for (size_t i = 0; i < digits; ++i) {
+            if (*this->ptr_err.ptr != '0')
+                break;
+            this->ptr_err.ptr--;
+        }
         if (*this->ptr_err.ptr == '.')
             this->ptr_err.ptr--;
+        if ((this->ptr_err.ptr + 1) == base_ptr || *this->ptr_err.ptr == '-')
+            *(++this->ptr_err.ptr) = '0';
         this->ptr_err.ptr++;
-
-        if (special_case)
-            *(base_ptr + ((*base_ptr == '-') ? 1 : 0)) = '0';
     }
 
     void emit_xy(const Vec2d &point) {
