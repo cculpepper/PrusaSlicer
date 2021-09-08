@@ -1787,7 +1787,7 @@ struct Plater::priv
     wxString get_project_filename(const wxString& extension = wxEmptyString) const;
     void set_project_filename(const wxString& filename);
     // Call after plater and Canvas#D is initialized
-    void init_slicing_progress_notification();
+    void init_notification_manager();
 
     // Caching last value of show_action_buttons parameter for show_action_buttons(), so that a callback which does not know this state will not override it.
     mutable bool    			ready_to_slice = { false };
@@ -1846,6 +1846,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         "support_material_contact_distance", "support_material_bottom_contact_distance", "raft_layers"
         }))
     , sidebar(new Sidebar(q))
+    , notification_manager(new NotificationManager(q))
     , m_ui_jobs(this)
     , delayed_scene_refresh(false)
     , view_toolbar(GLToolbar::Radio, "View")
@@ -2013,7 +2014,7 @@ Plater::priv::priv(Plater *q, MainFrame *main_frame)
         });
 #endif /* _WIN32 */
 
-	notification_manager = new NotificationManager(this->q);
+	//notification_manager = new NotificationManager(this->q);
 
     if (wxGetApp().is_editor()) {
         this->q->Bind(EVT_EJECT_DRIVE_NOTIFICAION_CLICKED, [this](EjectDriveNotificationClickedEvent&) { this->q->eject_drive(); });
@@ -4129,15 +4130,18 @@ void Plater::priv::set_project_filename(const wxString& filename)
         wxGetApp().mainframe->add_to_recent_projects(filename);
 }
 
-void Plater::priv::init_slicing_progress_notification()
+void Plater::priv::init_notification_manager()
 {
     if (!notification_manager)
         return;
+    notification_manager->init();
+
     auto cancel_callback = [this]() {
         this->background_process.stop();
     };
     notification_manager->init_slicing_progress_notification(cancel_callback);
     notification_manager->set_fff(printer_technology == ptFFF);
+    notification_manager->init_progress_indicator();
 }
 
 void Plater::priv::set_current_canvas_as_dirty()
@@ -6538,9 +6542,9 @@ NotificationManager* Plater::get_notification_manager()
 	return p->notification_manager;
 }
 
-void Plater::init_slicing_progress_notification()
+void Plater::init_notification_manager()
 {
-    p->init_slicing_progress_notification();
+    p->init_notification_manager();
 }
 
 bool Plater::can_delete() const { return p->can_delete(); }

@@ -364,7 +364,7 @@ public:
 
 	const NotificationManager* get_notification_manager() const;
 	NotificationManager* get_notification_manager();
-    void init_slicing_progress_notification();
+    void init_notification_manager();
 
     void bring_instance_forward();
     

@@ -958,7 +958,7 @@ bool GUI_App::on_init_inner()
 //     update_mode(); // !!! do that later
     SetTopWindow(mainframe);
 
-    plater_->init_slicing_progress_notification();
+    plater_->init_notification_manager();
 
     m_printhost_job_queue.reset(new PrintHostJobQueue(mainframe->printhost_queue_dlg()));
 

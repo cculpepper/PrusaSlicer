@@ -102,8 +102,7 @@ enum class NotificationType
 	// Give user advice to simplify object with big amount of triangles
 	SimplifySuggestion,
 	// Inheriting from both ProgressBarNotification and Jobs/ProgressIndicator
-	// TO BE IMPLEMENTED
-	//ProgressIndicator,
+	ProgressIndicator,
 };
 
 class NotificationManager
@@ -130,6 +129,9 @@ public:
 	NotificationManager(wxEvtHandler* evt_handler);
 	~NotificationManager();
 	
+
+	void init() { m_initialized = true; }
+
 	// Push a prefabricated notification from basic_notifications (see the table at the end of this file).
 	void push_notification(const NotificationType type, int timestamp = 0);
 	// Push a NotificationType::CustomNotification with NotificationLevel::RegularNotificationLevel and 10s fade out interval.
@@ -187,6 +189,8 @@ public:
 	// Add a print time estimate to an existing SlicingProgress notification. Set said notification to SP_COMPLETED state.
 	void set_slicing_complete_print_time(const std::string& info, bool sidebar_colapsed);
 	void set_slicing_progress_export_possible();
+	// ProgressIndicator notification
+	void init_progress_indicator();
 	// Hint (did you know) notification
 	void push_hint_notification(bool open_next);
 	bool is_hint_notification_open();
@@ -533,6 +537,31 @@ private:
 		bool                    m_export_possible { false };
 	};
 
+	class ProgressIndicatorNotification : public ProgressBarNotification, ProgressIndicator
+	{
+	public:
+		ProgressIndicatorNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler) 
+		: ProgressBarNotification(n, id_provider, evt_handler, 0.0f) 
+		{
+		}
+		// ProgressIndicator 
+		using CancelFn = std::function<void()>;
+		void set_range(int range) override { m_range = range; }
+		void set_cancel_callback(CancelFn callback) override { m_cancel_callback = callback; }
+		void set_progress(int pr) override { set_percentage((float)pr / (float)m_range); }
+		void set_status_text(const char*) override; // utf8 char array
+		int  get_range() const override { return m_range; }
+		// ProgressBarNotification
+		void init() override;
+		void set_percentage(float percent) override;
+		bool update_state(bool paused, const int64_t delta) override;
+		// Own
+	protected:
+		int			m_range { 100 };
+		CancelFn	m_cancel_callback { nullptr };
+
+	};
+
 	class ExportFinishedNotification : public PopNotification
 	{
 	public:
@@ -620,6 +649,8 @@ private:
 	// If there is some error notification active, then the "Export G-code" notification after the slicing is finished is suppressed.
     bool has_slicing_error_notification();
     
+	// set by init(), until false notifications are only added not updated and frame is not requested after push
+	bool m_initialized{ false };
 	// Target for wxWidgets events sent by clicking on the hyperlink available at some notifications.
 	wxEvtHandler*                m_evt_handler;
 	// Cache of IDs to identify and reuse ImGUI windows.
