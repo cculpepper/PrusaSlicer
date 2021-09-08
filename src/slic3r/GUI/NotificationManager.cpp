@@ -1342,22 +1342,79 @@ void NotificationManager::ProgressIndicatorNotification::init()
 void NotificationManager::ProgressIndicatorNotification::set_percentage(float percent)
 {
 	ProgressBarNotification::set_percentage(percent);
-	if (percent > 0.0f)
+	if (percent > 0.0f && percent < 1.0f)
 	{
+		m_state = EState::NotFading;
+		m_has_cancel_button = true;
+	} else if (percent >= 1.0f) {
 		m_state = EState::Shown;
+		m_has_cancel_button = false;
 	} else {
 		m_state = EState::Hidden;
 	}
 }
 bool NotificationManager::ProgressIndicatorNotification::update_state(bool paused, const int64_t delta)
 {
+	if (m_percentage > 0.0f && m_percentage < 1.0f)
+	{
+		m_state = EState::Shown;
+		m_next_render = 100;
+		return true;
+	}
 	bool ret = ProgressBarNotification::update_state(paused, delta);
 	// sets Estate to hidden 
+	
 	if (get_state() == PopNotification::EState::ClosePending || get_state() == PopNotification::EState::Finished)
 		set_percentage(0.0f);
 	return ret;
 }
 
+void NotificationManager::ProgressIndicatorNotification::render_cancel_button(ImGuiWrapper& imgui, const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y)
+{
+	ImVec2 win_size(win_size_x, win_size_y);
+	ImVec2 win_pos(win_pos_x, win_pos_y);
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(.0f, .0f, .0f, .0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(.0f, .0f, .0f, .0f));
+	push_style_color(ImGuiCol_Text, ImVec4(1.f, 1.f, 1.f, 1.f), m_state == EState::FadingOut, m_current_fade_opacity);
+	push_style_color(ImGuiCol_TextSelectedBg, ImVec4(0, .75f, .75f, 1.f), m_state == EState::FadingOut, m_current_fade_opacity);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(.0f, .0f, .0f, .0f));
+
+
+	std::string button_text;
+	button_text = ImGui::CancelButton;
+
+	if (ImGui::IsMouseHoveringRect(ImVec2(win_pos.x - win_size.x / 10.f, win_pos.y),
+		ImVec2(win_pos.x, win_pos.y + win_size.y - (m_minimize_b_visible ? 2 * m_line_height : 0)),
+		true))
+	{
+		button_text = ImGui::CancelHoverButton;
+	}
+	ImVec2 button_pic_size = ImGui::CalcTextSize(button_text.c_str());
+	ImVec2 button_size(button_pic_size.x * 1.25f, button_pic_size.y * 1.25f);
+	ImGui::SetCursorPosX(win_size.x - m_line_height * 2.75f);
+	ImGui::SetCursorPosY(win_size.y / 2 - button_size.y);
+	if (imgui.button(button_text.c_str(), button_size.x, button_size.y))
+	{
+		on_cancel_button();
+	}
+
+	//invisible large button
+	ImGui::SetCursorPosX(win_size.x - m_line_height * 2.35f);
+	ImGui::SetCursorPosY(0);
+	if (imgui.button(" ", m_line_height * 2.125, win_size.y - (m_minimize_b_visible ? 2 * m_line_height : 0)))
+	{
+		on_cancel_button();
+	}
+	ImGui::PopStyleColor(5);
+}
+void NotificationManager::ProgressIndicatorNotification::render_close_button(ImGuiWrapper& imgui, const float win_size_x, const float win_size_y, const float win_pos_x, const float win_pos_y)
+{
+	// Do not render close button while showing progress - cancel button is rendered instead
+	if (m_percentage >= 1.0f)
+	{
+		ProgressBarNotification::render_close_button(imgui, win_size_x, win_size_y, win_pos_x, win_pos_y);
+	}
+}
 //------NotificationManager--------
 NotificationManager::NotificationManager(wxEvtHandler* evt_handler) :
 	m_evt_handler(evt_handler)
@@ -1669,17 +1726,64 @@ void NotificationManager::set_slicing_progress_export_possible()
 }
 void NotificationManager::init_progress_indicator()
 {
-	
 	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
 		if (notification->get_type() == NotificationType::ProgressIndicator) {
 			return;
 		}
 	}
-	
-	NotificationData data{ NotificationType::ProgressIndicator, NotificationLevel::ProgressBarNotificationLevel, 10};
+	NotificationData data{ NotificationType::ProgressIndicator, NotificationLevel::ProgressBarNotificationLevel, 5};
 	auto notification = std::make_unique<NotificationManager::ProgressIndicatorNotification>(data, m_id_provider, m_evt_handler);
-	m_progress_indicator_notification = std::make_shared<ProgressIndicatorNotification>(notification.get());
 	push_notification_data(std::move(notification), 0);
+}
+
+void NotificationManager::progress_indicator_set_range(int range)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::ProgressIndicator) {
+			dynamic_cast<ProgressIndicatorNotification*>(notification.get())->set_range(range);
+			return;
+		}
+	}
+	init_progress_indicator();
+}
+void NotificationManager::progress_indicator_set_cancel_callback(CancelFn callback/* = CancelFn()*/)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::ProgressIndicator) {
+			dynamic_cast<ProgressIndicatorNotification*>(notification.get())->set_cancel_callback(callback);
+			return;
+		}
+	}
+	init_progress_indicator();
+}
+void NotificationManager::progress_indicator_set_progress(int pr)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::ProgressIndicator) {
+			dynamic_cast<ProgressIndicatorNotification*>(notification.get())->set_progress(pr);
+			return;
+		}
+	}
+	init_progress_indicator();
+}
+void NotificationManager::progress_indicator_set_status_text(const char* text)
+{
+	for (std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::ProgressIndicator) {
+			dynamic_cast<ProgressIndicatorNotification*>(notification.get())->set_status_text(text);
+			return;
+		}
+	}
+	init_progress_indicator();
+}
+int  NotificationManager::progress_indicator_get_range() const
+{
+	for (const std::unique_ptr<PopNotification>& notification : m_pop_notifications) {
+		if (notification->get_type() == NotificationType::ProgressIndicator) {
+			return dynamic_cast<ProgressIndicatorNotification*>(notification.get())->get_range();
+		}
+	}
+	return 0;
 }
 
 void NotificationManager::push_hint_notification(bool open_next)

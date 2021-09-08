@@ -28,6 +28,8 @@ wxDECLARE_EVENT(EVT_EXPORT_GCODE_NOTIFICAION_CLICKED, ExportGcodeNotificationCli
 using PresetUpdateAvailableClickedEvent = SimpleEvent;
 wxDECLARE_EVENT(EVT_PRESET_UPDATE_AVAILABLE_CLICKED, PresetUpdateAvailableClickedEvent);
 
+using CancelFn = std::function<void()>;
+
 class GLCanvas3D;
 class ImGuiWrapper;
 enum class InfoItemType;
@@ -164,7 +166,6 @@ public:
 	// Closes error or warning of the same text
 	void close_plater_error_notification(const std::string& text);
 	void close_plater_warning_notification(const std::string& text);
-	
 	// Called when the side bar changes its visibility, as the "slicing complete" notification supplements
 	// the "slicing info" normally shown at the side bar.
 	void set_sidebar_collapsed(bool collapsed);
@@ -191,6 +192,11 @@ public:
 	void set_slicing_progress_export_possible();
 	// ProgressIndicator notification
 	void init_progress_indicator();
+	void progress_indicator_set_range(int range);
+	void progress_indicator_set_cancel_callback(CancelFn callback = CancelFn());
+	void progress_indicator_set_progress(int pr);
+	void progress_indicator_set_status_text(const char*); // utf8 char array
+	int  progress_indicator_get_range() const;
 	// Hint (did you know) notification
 	void push_hint_notification(bool open_next);
 	bool is_hint_notification_open();
@@ -398,7 +404,7 @@ private:
 	{
 	public:
 		
-		ProgressBarNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler, float percentage) : PopNotification(n, id_provider, evt_handler) { }
+		ProgressBarNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler) : PopNotification(n, id_provider, evt_handler) { }
 		virtual void set_percentage(float percent) { m_percentage = percent; }
 	protected:
 		virtual void init() override;
@@ -416,7 +422,7 @@ private:
 		{}
 		void			render_minimize_button(ImGuiWrapper& imgui,
 			const float win_pos_x, const float win_pos_y) override {}
-		float				m_percentage;
+		float				m_percentage {0.0f};
 		
 		bool				m_has_cancel_button {false};
 		// local time of last hover for showing tooltip
@@ -436,7 +442,7 @@ private:
 			PB_COMPLETED
 		};
 		PrintHostUploadNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler, float percentage, int job_id, float filesize)
-			:ProgressBarNotification(n, id_provider, evt_handler, percentage)
+			:ProgressBarNotification(n, id_provider, evt_handler)
 			, m_job_id(job_id)
 			, m_file_size(filesize)
 		{
@@ -480,7 +486,7 @@ private:
 			SP_COMPLETED // Has export hyperlink and print info, fades after 20 sec if sidebar is shown, otherwise no fade out
 		};
 		SlicingProgressNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler, std::function<void()> callback)
-		: ProgressBarNotification(n, id_provider, evt_handler, 0)
+		: ProgressBarNotification(n, id_provider, evt_handler)
 		, m_cancel_callback(callback)
 		{
 			set_progress_state(SlicingProgressState::SP_NO_SLICING);
@@ -537,20 +543,19 @@ private:
 		bool                    m_export_possible { false };
 	};
 
-	class ProgressIndicatorNotification : public ProgressBarNotification, ProgressIndicator
+	class ProgressIndicatorNotification : public ProgressBarNotification
 	{
 	public:
 		ProgressIndicatorNotification(const NotificationData& n, NotificationIDProvider& id_provider, wxEvtHandler* evt_handler) 
-		: ProgressBarNotification(n, id_provider, evt_handler, 0.0f) 
+		: ProgressBarNotification(n, id_provider, evt_handler) 
 		{
 		}
 		// ProgressIndicator 
-		using CancelFn = std::function<void()>;
-		void set_range(int range) override { m_range = range; }
-		void set_cancel_callback(CancelFn callback) override { m_cancel_callback = callback; }
-		void set_progress(int pr) override { set_percentage((float)pr / (float)m_range); }
-		void set_status_text(const char*) override; // utf8 char array
-		int  get_range() const override { return m_range; }
+		void set_range(int range) { m_range = range; }
+		void set_cancel_callback(CancelFn callback) { m_cancel_callback = callback; }
+		void set_progress(int pr) { set_percentage((float)pr / (float)m_range); }
+		void set_status_text(const char*); // utf8 char array
+		int  get_range() const { return m_range; }
 		// ProgressBarNotification
 		void init() override;
 		void set_percentage(float percent) override;
@@ -560,6 +565,13 @@ private:
 		int			m_range { 100 };
 		CancelFn	m_cancel_callback { nullptr };
 
+		void		render_close_button(ImGuiWrapper& imgui,
+			                            const float win_size_x, const float win_size_y,
+			                            const float win_pos_x, const float win_pos_y) override;
+		void		render_cancel_button(ImGuiWrapper& imgui,
+									     const float win_size_x, const float win_size_y,
+									     const float win_pos_x, const float win_pos_y) override;
+		void        on_cancel_button() { if (m_cancel_callback) m_cancel_callback(); }
 	};
 
 	class ExportFinishedNotification : public PopNotification

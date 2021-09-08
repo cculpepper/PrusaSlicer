@@ -1522,10 +1522,10 @@ struct Plater::priv
     public:
         Jobs(priv *_m) : m(_m)
         {
-            m_arrange_id = add_job(std::make_unique<ArrangeJob>(/*m->statusbar(),*/ m->q));
-            m_fill_bed_id = add_job(std::make_unique<FillBedJob>(/*m->statusbar(),*/ m->q));
-            m_rotoptimize_id = add_job(std::make_unique<RotoptimizeJob>(/*m->statusbar(),*/ m->q));
-            m_sla_import_id = add_job(std::make_unique<SLAImportJob>(/*m->statusbar(),*/ m->q));
+            m_arrange_id = add_job(std::make_unique<ArrangeJob>(m->notification_manager, m->q));
+            m_fill_bed_id = add_job(std::make_unique<FillBedJob>(m->notification_manager, m->q));
+            m_rotoptimize_id = add_job(std::make_unique<RotoptimizeJob>(m->notification_manager, m->q));
+            m_sla_import_id = add_job(std::make_unique<SLAImportJob>(m->notification_manager, m->q));
         }
         
         void arrange()
